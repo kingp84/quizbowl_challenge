@@ -15,10 +15,12 @@ set_background(bg_map[bg_choice])
 
 # --- Google OAuth login ---
 if "user_info" not in st.session_state:
-    user = login_with_google()
+    login_with_google()
 else:
-    user = st.session_state["user_info"]
-
+    st.success(f"Welcome {st.session_state['user_info']['email']}")
+    # show setup menu here
+    show_setup_menu()
+    
 # --- Custom laurel wreath spinner HTML ---
 spinner_html = """
 <div class="laurel-spinner">
