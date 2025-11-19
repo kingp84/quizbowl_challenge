@@ -1,0 +1,8 @@
+streamlit
+pandas
+python-docx
+PyPDF2
+reportlab
+authlib
+requests
+sqlite3
