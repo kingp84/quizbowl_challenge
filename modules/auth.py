@@ -1,19 +1,38 @@
 # modules/auth.py
 
 import sqlite3
-from pathlib import Path
+import streamlit as st
 
-DB_PATH = Path("data/users.db")
+DB_PATH = "quizbowl.db"
 
-def _conn():
+def init_user_db():
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            password TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-def authenticate(email: str, password: str) -> dict | None:
-    with _conn() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE email = ? AND password = ?",
-            (email, password)
-        ).fetchone()
-        return dict(row) if row else None
+def register_user(username, password):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        return True, "Registration successful!"
+    except sqlite3.IntegrityError:
+        return False, "Username already exists."
+    finally:
+        conn.close()
+
+def login_user(username, password):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
