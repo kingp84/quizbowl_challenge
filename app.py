@@ -60,5 +60,7 @@ elif mode == "Login":
 if st.session_state.logged_in:
     st.subheader("🏆 Dashboard")
     st.write(f"You're logged in as **{st.session_state.user}**.")
-    # Placeholder for gameplay or dashboard modules
-    st.info("Game modules coming soon!")
+    
+if user:
+    game_ui(user)
+
