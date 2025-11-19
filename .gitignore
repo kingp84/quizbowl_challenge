@@ -1,1 +1,3 @@
 *.bson
+.streamlit/secrets.toml
+config/settings.py
