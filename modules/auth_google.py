@@ -7,6 +7,7 @@ GOOGLE_CLIENT_ID = st.secrets["GOOGLE_CLIENT_ID"]
 GOOGLE_CLIENT_SECRET = st.secrets["GOOGLE_CLIENT_SECRET"]
 REDIRECT_URI = st.secrets["REDIRECT_URI"]
 REDIRECT_URI = "https://quizbowl-challenge.streamlit.app/"
+REDIRECT_URI = "http://localhost:8501/"
 
 AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
