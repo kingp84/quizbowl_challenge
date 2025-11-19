@@ -2,9 +2,8 @@ import streamlit as st
 from modules.auth_google import login_with_google
 from modules.ui_utils import set_background
 from modules.game_ui import game_ui
-from modules.auth_local import init_user_db, register_user, login_user  # if using local fallback
 
-# --- Background selector (before anything else) ---
+# --- Background selector ---
 bg_choice = st.selectbox("Choose a background theme", ["Default", "Tournament", "Trivia"])
 bg_map = {
     "Default": "assets/default_bg.png",
@@ -22,10 +21,10 @@ if "user_info" in st.session_state:
         del st.session_state["user_info"]
         st.experimental_rerun()
 
-# --- Game UI if Google login successful ---
+# --- Game UI if logged in ---
 if user:
     st.success(f"Welcome, {user['name']} ({user['email']})")
     game_ui(user)
-
-# --- Optional: Local login/register fallback
+else:
+    st.info("Please sign in with Google to begin.")
 
