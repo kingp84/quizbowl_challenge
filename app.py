@@ -1,52 +1,54 @@
 import streamlit as st
-from ui.components import coach_dashboard, login, play, promo_redeem
-from ui.components import feedback_section, feedback_dashboard, reports, promo_admin
+from modules.auth import init_user_db, register_user, login_user
+from modules.ui_utils import set_background
 
-# Utility function
-def is_admin(email: str) -> bool:
-    if not email:
-        return False
-    admins = ["patrick.e.king1958@gmail.com"]
-    return email in admins
+# Set background image (adjust path as needed)
+set_background("assets/background.png")
 
-def main():
-    st.set_page_config(page_title="Quizbowl Challenge", layout="wide")
-    st.title("Quizbowl Challenge")
+# Initialize user database
+init_user_db()
 
-    # Use this for testing without login
-    # user = {
-    #     "id": 123,
-    #     "name": "Patrick",
-    #     "email": "patrick@example.com",
-    #     "premium": True
-    # }
+# App title
+st.title("🎯 Quizbowl Challenge")
 
-    # Use this for production with login
-    user = st.session_state.get("user")
-    email = user["email"] if user else None
-    admin = is_admin(email)
+# Choose between login and registration
+mode = st.radio("Choose mode", ["Login", "Register"], horizontal=True)
 
-    st.sidebar.title("Quizbowl Challenge")
-    page = st.sidebar.radio("Navigate", [
-        "Login", "Play", "Coach Dashboard", "Promo Redeem", "Feedback", "Reports", "Admin"
-    ])
+# User input fields
+username = st.text_input("Username")
+password = st.text_input("Password", type="password")
 
-    if page == "Login":
-        login.render_login()
-    elif page == "Play":
-        play.render_play(user)
-    elif page == "Coach Dashboard":
-        coach_dashboard.render_coach_dashboard(user)
-    elif page == "Promo Redeem":
-        promo_redeem.render_promo_redeem(user)
-    elif page == "Feedback":
-        feedback_section.render_feedback_section(user)
-        if admin:
-            feedback_dashboard.render_feedback_dashboard()
-    elif page == "Reports":
-        reports.render_reports(admin)
-    elif page == "Admin":
-        promo_admin.render_promo_admin(admin)
+# Session state to track login
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-if __name__ == "__main__":
-    main()
+# Registration flow
+if mode == "Register":
+    if st.button("Register"):
+        if username and password:
+            success, message = register_user(username, password)
+            st.success(message) if success else st.error(message)
+        else:
+            st.warning("Please enter both username and password.")
+
+# Login flow
+elif mode == "Login":
+    if st.button("Login"):
+        if username and password:
+            if login_user(username, password):
+                st.session_state.logged_in = True
+                st.session_state.user = username
+                st.success(f"Welcome, {username}!")
+            else:
+                st.error("Invalid credentials.")
+        else:
+            st.warning("Please enter both username and password.")
+
+# Post-login content
+if st.session_state.logged_in:
+    st.subheader("🏆 Dashboard")
+    st.write(f"You're logged in as **{st.session_state.user}**.")
+    # Placeholder for gameplay or dashboard modules
+    st.info("Game modules coming soon!")
