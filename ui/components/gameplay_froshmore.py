@@ -4,9 +4,9 @@ import streamlit as st
 
 # Handle prior module naming (frosmore vs froshmore)
 try:
-    from modules.gameplay_frosmore import get_question as get_froshmore_question
+    from modules.gameplay_froshmore import get_question as get_froshmore_question
 except ImportError:
-    from modules.gameplay_frosmore import get_question as get_froshmore_question  # fallback to same name
+    from modules.gameplay_froshmore import get_question as get_froshmore_question  # fallback to same name
 
 def render_gameplay_froshmore(user: dict | None):
     st.header("🏁 Froshmore Gameplay")
