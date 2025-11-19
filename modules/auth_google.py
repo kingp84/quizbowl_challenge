@@ -1,53 +1,70 @@
+# modules/auth_google.py
 import streamlit as st
-from authlib.integrations.requests_client import OAuth2Session
-import os
-import urllib.parse
+from requests_oauthlib import OAuth2Session
 
-# Load from Streamlit secrets or environment variables
-GOOGLE_CLIENT_ID = st.secrets.get("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = st.secrets.get("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = "https://quizbowl-challenge.streamlit.app"  # Replace with your actual Streamlit app URL
+# Load secure values from Streamlit secrets
+GOOGLE_CLIENT_ID = st.secrets["GOOGLE_CLIENT_ID"]
+GOOGLE_CLIENT_SECRET = st.secrets["GOOGLE_CLIENT_SECRET"]
+REDIRECT_URI = st.secrets["REDIRECT_URI"]
 
 AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
-USERINFO_ENDPOINT = "https://www.googleapis.com/oauth2/v3/userinfo"
+USERINFO_ENDPOINT = "https://openidconnect.googleapis.com/v1/userinfo"
+
 
 def login_with_google():
-    if "user_info" in st.session_state:
-        return st.session_state["user_info"]
-
-    query_params = st.query_params.to_dict()
-    code = query_params.get("code")
+    """
+    Returns user_info dict on successful login, otherwise None.
+    Designed to be called from app.py.
+    """
+    # ✅ Read query parameters at the very beginning
+    params = st.query_params.to_dict()
+    code_param = params.get("code")
+    state_param = params.get("state")
+    code = code_param[0] if isinstance(code_param, list) and code_param else None
+    returned_state = state_param[0] if isinstance(state_param, list) and state_param else None
 
     if code:
-        # Exchange code for token
-        client = OAuth2Session(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, redirect_uri=REDIRECT_URI)
-        token = client.fetch_token(
+        saved_state = st.session_state.get("oauth_state")
+        if saved_state and returned_state and returned_state != saved_state:
+            st.error("OAuth state mismatch. Try again.")
+            return None
+
+        oauth_client = OAuth2Session(GOOGLE_CLIENT_ID, redirect_uri=REDIRECT_URI)
+        token = oauth_client.fetch_token(
             TOKEN_ENDPOINT,
             code=code,
-            grant_type="authorization_code"
+            client_secret=GOOGLE_CLIENT_SECRET,
+            include_client_id=True
         )
 
-        # Get user info
-        resp = client.get(USERINFO_ENDPOINT, token=token)
+        resp = oauth_client.get(USERINFO_ENDPOINT, token=token)
         user_info = resp.json()
         st.session_state["user_info"] = user_info
+        if "oauth_state" in st.session_state:
+            del st.session_state["oauth_state"]
         return user_info
 
-    # Not logged in yet
-    auth_url = (
-        f"{AUTHORIZATION_ENDPOINT}?"
-        f"response_type=code&"
-        f"client_id={GOOGLE_CLIENT_ID}&"
-        f"redirect_uri={urllib.parse.quote(REDIRECT_URI)}&"
-        f"scope=openid%20email%20profile&"
-        f"access_type=offline&"
-        f"prompt=consent"
+    # Not logged in: build the authorization URL safely using requests_oauthlib
+    oauth = OAuth2Session(
+        client_id=GOOGLE_CLIENT_ID,
+        redirect_uri=REDIRECT_URI,
+        scope=["openid", "email", "profile"]
     )
 
+    auth_url, state = oauth.authorization_url(
+        AUTHORIZATION_ENDPOINT,
+        access_type="offline",
+        prompt="consent"
+    )
+
+    # Persist state to validate callback later
+    st.session_state["oauth_state"] = state
+
+    # ✅ Only render the sign-in button (no debug text)
     st.markdown(f"""
         <a href="{auth_url}">
-            <button style="font-size: 1.2rem; padding: 0.5rem 1rem; margin-top: 1rem;">
+            <button style="font-size: 1.0rem; padding: 0.45rem 0.9rem; margin-top: 0.6rem;">
                 Sign in with Google
             </button>
         </a>
