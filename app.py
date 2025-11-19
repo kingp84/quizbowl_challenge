@@ -2,8 +2,18 @@ import streamlit as st
 from modules.auth import init_user_db, register_user, login_user
 from modules.ui_utils import set_background
 
-# Set background image (adjust path as needed)
-set_background("assets/background.png")
+# Background selector
+bg_choice = st.selectbox("Choose a background theme", ["Default", "Tournament", "Trivia"])
+
+# Map choice to image path
+bg_map = {
+    "Default": "assets/default_bg.png",
+    "Tournament": "assets/tournament_bg.png",
+    "Trivia": "assets/trivia_bg.png"
+}
+
+# Set background based on selection
+set_background(bg_map[bg_choice])
 
 # Initialize user database
 init_user_db()
